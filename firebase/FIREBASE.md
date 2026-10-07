@@ -31,7 +31,7 @@ O comando publica o jogo e as regras de segurança da base de dados. No fim most
 ## 3. Testar
 
 1. Abre o endereço no telemóvel e toca em **Entrar com Google** no topo do ecrã inicial.
-2. Na loja, usa **Admin: adicionar 5 jogos de teste**, compra uma skin e abre o mesmo endereço noutro dispositivo com a mesma conta: o saldo e as skins aparecem lá.
+2. Na loja, obtém uma skin e abre o mesmo endereço noutro dispositivo com a mesma conta: o saldo e as skins aparecem lá.
 
 ## Domínio próprio (opcional)
 

@@ -1181,7 +1181,6 @@ function vShop(){
   <button class="fit-cta" data-act="openFitting"><span class="fit-cta-art">${bucketSVG(10,'thumb')}</span><span><b>Entrar no provador</b><small>Experimenta combinações de balde, mesa, papel e fitas antes de comprar.</small></span></button>
   <div class="tabs" role="tablist" aria-label="Categorias">${CATS.map(c=>`<button role="tab" aria-selected="${c===cat}" data-act="tab" data-cat="${c}">${CAT_LABEL[c]}</button>`).join('')}</div>
   <div class="grid">${SKINS[cat].map(it=>vItem(cat,it)).join('')}</div>
-  <button class="link" data-act="testCoins">Admin: adicionar 5 jogos de teste</button>
 </div>`;
 }
 function lookMissing(L){ return CATS.filter(c=>!PROF.owned[c].includes(L[c])).map(c=>SKINS[c].find(x=>x.id===L[c])); }
@@ -1218,7 +1217,6 @@ function award(){
   else if(mins<4) S.award={ok:false, reason:'Este jogo durou menos de 4 minutos e não conta para a loja.'};
   else{ PROF.awarded.push(S.gameId); saveProf(); S.award={ok:true, fresh:true}; }
 }
-function grantTest(){ PROF.bonus+=5; saveProf(); refresh(); toast('+5 jogos de teste'); }
 function popWallet(){ A({targets:'.wallet', scale:[1.3,1], duration:600, easing:'easeOutElastic(1, .5)'}); }
 
 function vHome(){
@@ -1541,7 +1539,7 @@ function tryBio(){
     .catch(()=>{ if(UI.overlay==='pin'){ UI.pinMsg='Biometria não confirmada. Usa o PIN.'; renderOverlay(); } });
 }
 function closeAdmin(){ UI.overlay=null; UI.pinFor=null; renderOverlay(); render(); }
-function pinOk(){ UI.pinEntry=''; if(UI.pinFor==='coins'){ UI.overlay=null; UI.pinFor=null; renderOverlay(); grantTest(); } else { UI.overlay='admin'; renderOverlay(); } }
+function pinOk(){ UI.pinEntry=''; UI.overlay='admin'; renderOverlay(); }
 async function registerBio(){
   try{
     const cred=await navigator.credentials.create({publicKey:{
@@ -1891,8 +1889,6 @@ const ACT={
   fitEquip(){ PROF.eq=Object.assign({},UI.preview); PROF.eqAt=Date.now(); saveProf(); applyLook(); render(); toast('Visual aplicado'); },
   fitBuy(){ const items=lookMissing(UI.preview); if(items.reduce((a,it)=>a+priceOf(it),0)>0&&UI.confirmBuy!=='look'){ UI.confirmBuy='look'; render(); return; }
     UI.confirmBuy=null; if(!buyItems(items)) return; PROF.eq=Object.assign({},UI.preview); PROF.eqAt=Date.now(); saveProf(); applyLook(); UI.fx='bought'; render(); toast('Visual aplicado'); beep(990,.12); vib(40); },
-  testCoins(){ if(!ADMIN.pinHash&&!ADMIN.credId){ grantTest(); return; }
-    UI.pinFor='coins'; UI.overlay='pin'; UI.pinEntry=''; UI.pinMsg='PIN de admin para adicionar jogos de teste.'; UI.sheetIn=true; renderOverlay(); if(ADMIN.credId) tryBio(); },
   closeAdmin(){ closeAdmin(); },
   pinKey(b){ if(UI.pinEntry.length>=4) return; UI.pinEntry+=b.dataset.d; renderOverlay();
     if(UI.pinEntry.length===4){ const entry=UI.pinEntry;
