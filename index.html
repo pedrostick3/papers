@@ -32,7 +32,7 @@ html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0; min-height:100%; background:var(--bg); color:var(--text);
   font-family:'Bricolage Grotesque', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size:17px; line-height:1.45; -webkit-tap-highlight-color:transparent; overflow-x:hidden}
-#app{max-width:520px; margin:0 auto; padding:16px 18px 28px; min-height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)); min-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column}
+#app{max-width:520px; margin:0 auto; padding:16px 18px 96px; min-height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)); min-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column}
 body.lockon #app{padding-top:64px}
 body.lockon.inturn #app{padding-top:16px}
 h1,h2,h3{margin:0; line-height:1.05}
@@ -1738,7 +1738,7 @@ const MORE=(function(){
   function set(v){ on=v; el.classList.toggle('on',v); }
   function run(){
     pend=false;
-    const d=document.documentElement, below=d.scrollHeight-(window.scrollY+d.clientHeight);
+    const d=document.documentElement, app=$('#app'), padB=parseFloat(getComputedStyle(app).paddingBottom)||0, below=app.getBoundingClientRect().bottom-padB-d.clientHeight; /* só conta conteúdo, não a margem final */
     const ov=($('#overlay')&&!$('#overlay').hidden)||document.querySelector('.pause,.cd');
     const cta=document.querySelector('.sticky-cta');
     el.style.setProperty('--more-b',cta?cta.offsetHeight+'px':'0px');
