@@ -340,7 +340,8 @@ th{color:var(--muted); font-weight:600}
 /* indicador de scroll */
 #more{position:fixed; left:0; right:0; bottom:var(--more-b,0px); height:calc(88px + env(safe-area-inset-bottom,0px)); z-index:15; pointer-events:none;
   display:flex; align-items:flex-end; justify-content:center; padding-bottom:calc(env(safe-area-inset-bottom,0px) + 12px);
-  background:linear-gradient(to bottom, transparent, var(--bg) 85%)}
+  background:linear-gradient(to bottom, transparent, var(--bg) 85%); opacity:0; visibility:hidden; transition:opacity .2s ease, visibility 0s linear .2s}
+#more.on{opacity:1; visibility:visible; transition:opacity .2s ease}
 #more button{pointer-events:auto; display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:8px 18px 8px 20px; border-radius:999px;
   border:2px solid var(--tinta); background:var(--papel); color:var(--tinta); font:inherit; font-weight:800; font-size:16px; box-shadow:0 3px 0 var(--shadow); cursor:pointer; animation:more-bob 1.4s ease-in-out infinite}
 #more button svg{display:block}
@@ -358,7 +359,7 @@ th{color:var(--muted); font-weight:600}
 </button>
 <div id="overlay" hidden></div>
 <div id="fx" aria-live="polite"></div>
-<div id="more" hidden><button type="button" data-act="more" aria-label="Há mais conteúdo. Toca para ver mais"><span>Mais</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+<div id="more"><button type="button" data-act="more" aria-label="Há mais conteúdo. Toca para ver mais"><span>Mais</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
 
 <script>
 (function(){
@@ -595,7 +596,7 @@ function bucketStage(size,count,skin){
 
 /* ---------- balde 3D (three.js + anime.js) ---------- */
 const B3D=(function(){
-  let ok=null, renderer, scene, camera, root, slipGroup, canvas, host=null, rafId=null, slipGeo, table, bucketObj=null, MSM;
+  let ok=null, renderer, scene, camera, root, rock, slipGroup, canvas, host=null, rafId=null, slipGeo, table, bucketObj=null, MSM;
   const slips=[], cache={}, cur={bucket:null, table:null, paper:null, tape:null}; let mats=[];
   const view={az:.5, el:.95, r:5.9}, tilt={x:0,y:0,tx:0,ty:0,has:false}, drag={on:false,x:0,v:0};
   const TABLE_ROUGH={carvalho:.7, nogueira:.6, feltro:1, xadrez:.95, marmore:.4, azulejo:.35};
@@ -714,7 +715,8 @@ const B3D=(function(){
     table=new THREE.Mesh(new THREE.CircleGeometry(3.2,64),new MSM({map:tableTex('carvalho'), roughness:.7, metalness:0, transparent:true, envMapIntensity:.6}));
     table.rotation.x=-Math.PI/2; table.receiveShadow=true; scene.add(table);
     root=new THREE.Group(); scene.add(root);
-    slipGroup=new THREE.Group(); root.add(slipGroup);
+    rock=new THREE.Group(); root.add(rock); /* balança sobre a aresta da base, sem entrar na mesa */
+    slipGroup=new THREE.Group(); rock.add(slipGroup);
     slipGeo=new THREE.BoxGeometry(.36,.024,.24);
     canvas.addEventListener('pointerdown',e=>{ drag.on=true; drag.x=e.clientX; drag.v=0; });
     window.addEventListener('pointermove',e=>{ if(!drag.on) return; const dx=e.clientX-drag.x; drag.x=e.clientX; root.rotation.y+=dx*.012; drag.v=dx*.0008; });
@@ -729,7 +731,7 @@ const B3D=(function(){
     return true;
   }
   function setLook(L){
-    if(L.bucket!==cur.bucket){ const first=cur.bucket===null; if(bucketObj) root.remove(bucketObj); bucketObj=makeBucket(L.bucket); root.add(bucketObj); cur.bucket=L.bucket;
+    if(L.bucket!==cur.bucket){ const first=cur.bucket===null; if(bucketObj) rock.remove(bucketObj); bucketObj=makeBucket(L.bucket); rock.add(bucketObj); cur.bucket=L.bucket;
       if(!first&&HAS_ANIME()) anime({targets:bucketObj.scale, x:[.8,1], y:[.8,1], z:[.8,1], duration:700, easing:'easeOutElastic(1, .6)'}); }
     if(L.table!==cur.table){ table.material.map=tableTex(L.table); table.material.roughness=TABLE_ROUGH[L.table]||.7; table.material.needsUpdate=true; cur.table=L.table; }
     if(L.paper!==cur.paper||L.tape!==cur.tape){ const pal=TAPES[L.tape]||TAPES.classica;
@@ -761,7 +763,9 @@ const B3D=(function(){
     if(!rafId) rafId=requestAnimationFrame(loop);
     return true;
   }
-  function wobble(a){ if(!active()) return; A({targets:root.rotation, keyframes:[{z:a},{z:-a*.7},{z:a*.35},{z:0}], duration:800, easing:'easeInOutSine'}); }
+  function rockTo(th){ const R=.8, s=th<0?-1:1; rock.rotation.z=th; rock.position.set(-s*R*(1-Math.cos(th)), R*Math.abs(Math.sin(th)), 0); }
+  function wobble(a){ if(!active()) return; if(!HAS_ANIME()){ rockTo(0); return; }
+    const o={a:0}; anime({targets:o, keyframes:[{a:a},{a:-a*.7},{a:a*.35},{a:0}], duration:800, easing:'easeInOutSine', update:()=>rockTo(o.a), complete:()=>rockTo(0)}); }
   function drop(k,onLand,done){
     if(!active()||!k){ if(done) done(); return; }
     const fast=k>8, gap=fast?Math.max(25,700/k):160, dur=fast?650:850;
@@ -1730,14 +1734,18 @@ function confetti(n){
 /* ---------- render ---------- */
 /* ---------- indicador de scroll ---------- */
 const MORE=(function(){
-  const el=$('#more'); let pend=false;
+  const el=$('#more'); let pend=false, on=false, want=false, tm=null;
+  function set(v){ on=v; el.classList.toggle('on',v); }
   function run(){
     pend=false;
-    const d=document.documentElement, below=d.scrollHeight-(window.scrollY+window.innerHeight);
+    const d=document.documentElement, below=d.scrollHeight-(window.scrollY+d.clientHeight);
     const ov=($('#overlay')&&!$('#overlay').hidden)||document.querySelector('.pause,.cd');
     const cta=document.querySelector('.sticky-cta');
     el.style.setProperty('--more-b',cta?cta.offsetHeight+'px':'0px');
-    el.hidden=!!ov||below<24;
+    if(ov){ want=false; if(tm){ clearTimeout(tm); tm=null; } if(on) set(false); return; }
+    if(below>40) want=true; else if(below<16) want=false;
+    if(want===on){ if(tm){ clearTimeout(tm); tm=null; } return; }
+    if(!tm) tm=setTimeout(()=>{ tm=null; if(want!==on) set(want); },140);
   }
   function upd(){ if(!pend){ pend=true; requestAnimationFrame(run); } }
   window.addEventListener('scroll',upd,{passive:true});
