@@ -1145,7 +1145,7 @@ function vAccount(){
 
 const coffeeIcon=sz=>`<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5V9z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16" stroke="currentColor" stroke-width="2"/><path d="M8 3v2M11 3v2M14 3v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
 const coffeeBtn=(cls)=>SUPPORT_URL?`<a class="btn coffee ${cls||''}" href="${esc(SUPPORT_URL)}" target="_blank" rel="noopener noreferrer">${coffeeIcon(22)}<span>Paga-me um café</span></a>`:'';
-const FEEDBACK_URL='https://github.com/pedrostick3/Papers/issues/new';
+const FEEDBACK_URL='https://github.com/pedrostick3/papers/issues/new';
 const coffeeCard=()=>`<div class="coffee-card"><p><b>O jogo é grátis.</b>${SUPPORT_URL?' Se te estás a divertir, podes pagar-me um café, se quiseres.':''}</p><p>Queres mais funcionalidades? Pede <a href="${FEEDBACK_URL}" target="_blank" rel="noopener noreferrer">aqui no GitHub</a> ou, se souberes quem eu sou, manda-me mensagem.</p>${coffeeBtn()}</div>`;
 const priceTag=(it,sz)=>PROMO&&it.price>0?`<s class="was">${it.price}</s><b class="free">Grátis</b>`:(it.price>0?`${coinSVG(sz)}${it.price}`:'');
 const walletChip=()=>`<button class="wallet" data-act="openShop" aria-label="${coins()} jogos para gastar na loja">${coinSVG(22)}<span>${coins()}</span><small>${plural(coins(),'jogo','jogos')}</small></button>`;

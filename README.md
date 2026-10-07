@@ -2,7 +2,7 @@
 
 Jogo de festa dos papelinhos, jogado num só telemóvel: o telemóvel do dono é o balde.
 
-**Jogar:** https://pedrostick3.github.io/Papers/
+**Jogar:** https://pedrostick3.github.io/papers/
 
 ## Como se joga
 
@@ -40,7 +40,7 @@ Para testar no computador sem rede, abre vários separadores com `?rede=local` n
 
 1. Envia os ficheiros deste repositório para o ramo `main` (pelo site: **Add file > Upload files**).
 2. Em **Settings > Pages**, escolhe **Deploy from a branch**, ramo `main`, pasta `/ (root)`, e guarda.
-3. Ao fim de um ou dois minutos o jogo fica em https://pedrostick3.github.io/Papers/.
+3. Ao fim de um ou dois minutos o jogo fica em https://pedrostick3.github.io/papers/.
 
 O repositório tem de ser público para usar o GitHub Pages com uma conta gratuita.
 
