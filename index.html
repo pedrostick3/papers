@@ -329,6 +329,14 @@ th{color:var(--muted); font-weight:600}
 .conf{position:absolute; top:-24px; width:10px; height:16px; border-radius:2px}
 .toast{position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom,0px) + 24px); transform:translateX(-50%); background:var(--papel); color:var(--tinta);
   padding:10px 18px; border-radius:12px; font-weight:600; box-shadow:0 8px 20px rgba(8,12,30,.3); animation:toast 2.2s ease forwards}
+/* promoção e café */
+.was{text-decoration:line-through; opacity:.6; font-weight:600; margin-right:5px}
+.free{font-weight:800}
+.lock .was{margin-right:3px}
+.promo{background:var(--ok); color:var(--tinta); border-radius:12px; padding:10px 14px}
+.btn.coffee{display:flex; align-items:center; justify-content:center; gap:10px; text-decoration:none}
+.coffee-card{background:var(--card); border:1px dashed var(--line); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:10px}
+.coffee-card .btn{background:#FFC145}
 /* indicador de scroll */
 #more{position:fixed; left:0; right:0; bottom:var(--more-b,0px); height:calc(88px + env(safe-area-inset-bottom,0px)); z-index:15; pointer-events:none;
   display:flex; align-items:flex-end; justify-content:center; padding-bottom:calc(env(safe-area-inset-bottom,0px) + 12px);
@@ -369,6 +377,9 @@ const SLIP_POS=[[62,46,-14],[84,38,6],[104,44,-4],[124,36,12],[142,46,-8],[74,54
 const RM=window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const HAS_ANIME=()=>typeof window.anime==='function' && !RM;
 const PKEY='papers.profile.v1';
+const PROMO=true; /* promoção: todas as skins grátis (price continua a ser o preço normal) */
+const SUPPORT_URL=''; /* link do café (ex.: https://buymeacoffee.com/o-teu-nome). Vazio = botão escondido */
+const priceOf=it=>PROMO?0:it.price;
 const CATS=['bucket','table','paper','tape'];
 const CAT_LABEL={bucket:'Balde', table:'Mesa', paper:'Papelinhos', tape:'Fitas'};
 const SKINS={
@@ -456,7 +467,7 @@ function normProf(p){
     const e=p.eq&&p.eq[c]; m.eq[c]=m.owned[c].includes(e)?e:SKINS[c][0].id; });
   return m;
 }
-const spentOf=p=>CATS.reduce((a,c)=>a+p.owned[c].reduce((t,id)=>t+((SKINS[c].find(x=>x.id===id)||{}).price||0),0),0);
+const spentOf=p=>CATS.reduce((a,c)=>a+p.owned[c].reduce((t,id)=>t+(priceOf(SKINS[c].find(x=>x.id===id)||{price:0})),0),0);
 const coins=()=>Math.max(0,PROF.awarded.length+PROF.bonus-spentOf(PROF));
 function mergeProf(a,b){
   const A=normProf(a); if(!b) return A; const B=normProf(b), m=normProf({});
@@ -1127,6 +1138,10 @@ function vAccount(){
 </div>`;
 }
 
+const coffeeIcon=sz=>`<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5V9z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16" stroke="currentColor" stroke-width="2"/><path d="M8 3v2M11 3v2M14 3v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+const coffeeBtn=(cls)=>SUPPORT_URL?`<a class="btn coffee ${cls||''}" href="${esc(SUPPORT_URL)}" target="_blank" rel="noopener noreferrer">${coffeeIcon(22)}<span>Paga-me um café</span></a>`:'';
+const coffeeCard=()=>SUPPORT_URL?`<div class="coffee-card"><p><b>O jogo é grátis.</b> Se te estás a divertir e quiseres ajudar, paga-me um café. É totalmente opcional.</p>${coffeeBtn()}</div>`:'';
+const priceTag=(it,sz)=>PROMO&&it.price>0?`<s class="was">${it.price}</s><b class="free">Grátis</b>`:(it.price>0?`${coinSVG(sz)}${it.price}`:'');
 const walletChip=()=>`<button class="wallet" data-act="openShop" aria-label="${coins()} jogos para gastar na loja">${coinSVG(22)}<span>${coins()}</span><small>${plural(coins(),'jogo','jogos')}</small></button>`;
 function thumb(cat,id,ctx){
   const pal=TAPES[ctx.tape]||TAPES.classica;
@@ -1140,6 +1155,7 @@ function vItem(cat,it){
   let cta;
   if(on) cta=`<span class="badge">Em uso</span>`;
   else if(owned) cta=`<button class="btn sm" data-act="equip" data-cat="${cat}" data-id="${it.id}">Usar</button>`;
+  else if(priceOf(it)===0) cta=`<button class="btn sm ok" data-act="buy" data-cat="${cat}" data-id="${it.id}" aria-label="Obter ${it.name} grátis${it.price?', preço normal '+it.price+' jogos':''}">${it.price?`<s class="was">${it.price}</s>`:''}Grátis</button>`;
   else cta=`<button class="btn sm ${conf?'ok':''}" data-act="buy" data-cat="${cat}" data-id="${it.id}" ${coins()<it.price?'disabled':''} aria-label="Comprar ${it.name} por ${it.price} jogos">${conf?'Confirmar':`${coinSVG(18)}${it.price}`}</button>`;
   return `<article class="item ${on?'on':''}">
   <div class="thumb">${thumb(cat,it.id,PROF.eq)}</div>
@@ -1152,7 +1168,9 @@ function vShop(){
   return `<div class="screen">
   <div class="topbar spread"><button class="link" data-act="shopBack">Voltar</button>${walletChip()}</div>
   <h2>Loja</h2>
+  ${PROMO?`<p class="promo"><b>Promoção:</b> todas as skins estão grátis por agora.</p>`:''}
   <p class="muted">Cada jogo terminado dá-te 1 jogo para gastar aqui. Já terminaste ${PROF.awarded.length} ${plural(PROF.awarded.length,'jogo','jogos')}.</p>
+  ${coffeeCard()}
   ${cloudLine()}
   <button class="fit-cta" data-act="openFitting"><span class="fit-cta-art">${bucketSVG(10,'thumb')}</span><span><b>Entrar no provador</b><small>Experimenta combinações de balde, mesa, papel e fitas antes de comprar.</small></span></button>
   <div class="tabs" role="tablist" aria-label="Categorias">${CATS.map(c=>`<button role="tab" aria-selected="${c===cat}" data-act="tab" data-cat="${c}">${CAT_LABEL[c]}</button>`).join('')}</div>
@@ -1162,12 +1180,12 @@ function vShop(){
 }
 function lookMissing(L){ return CATS.filter(c=>!PROF.owned[c].includes(L[c])).map(c=>SKINS[c].find(x=>x.id===L[c])); }
 function vFitting(){
-  const L=UI.preview, pal=TAPES[L.tape], missing=lookMissing(L), cost=missing.reduce((a,it)=>a+it.price,0), same=CATS.every(c=>PROF.eq[c]===L[c]);
+  const L=UI.preview, pal=TAPES[L.tape], missing=lookMissing(L), cost=missing.reduce((a,it)=>a+priceOf(it),0), full=missing.reduce((a,it)=>a+it.price,0), same=CATS.every(c=>PROF.eq[c]===L[c]);
   let cta;
   if(!missing.length) cta=same?`<button class="btn" disabled>É o visual que estás a usar</button>`:`<button class="btn ok" data-act="fitEquip">Usar este visual</button>`;
   else{ const enough=coins()>=cost, conf=UI.confirmBuy==='look';
-    cta=`<p class="small">Por comprar: ${missing.map(it=>`${it.name} (${it.price})`).join(', ')}.</p>`+
-      (enough?`<button class="btn ${conf?'warn':'ok'}" data-act="fitBuy">${conf?`Confirmar: gastar ${cost} ${plural(cost,'jogo','jogos')}`:`Comprar e usar por ${cost} ${plural(cost,'jogo','jogos')}`}</button>`
+    cta=`<p class="small">${cost===0?'Grátis na promoção':'Por comprar'}: ${missing.map(it=>`${it.name} (${cost===0?`<s class="was">${it.price}</s> grátis`:it.price})`).join(', ')}.</p>`+
+      (cost===0?`<button class="btn ok" data-act="fitBuy">Obter e usar, grátis${full?` <s class="was">${full}</s>`:''}</button>`:enough?`<button class="btn ${conf?'warn':'ok'}" data-act="fitBuy">${conf?`Confirmar: gastar ${cost} ${plural(cost,'jogo','jogos')}`:`Comprar e usar por ${cost} ${plural(cost,'jogo','jogos')}`}</button>`
              :`<button class="btn" disabled>Faltam-te ${cost-coins()} ${plural(cost-coins(),'jogo','jogos')}</button>`); }
   const li=LOOKS.findIndex(x=>CATS.every(c=>x.l[c]===L[c]));
   return `<div class="screen">
@@ -1177,12 +1195,12 @@ function vFitting(){
   <div class="fit-sample"><span class="sample-slip" style="background:${paperCss(L.paper,pal[0])};color:${PAPERS[L.paper].ink}">Torre Eiffel</span>${pal.slice(0,3).map((c,i)=>`<span class="tape sm" style="--c:${c}">${COLORS[i][0]}</span>`).join('')}</div>
   <div class="fit-row"><span>Visuais sugeridos</span><div class="looks" data-scroll="looks">${LOOKS.map((x,i)=>`<button class="look" data-act="fitLook" data-i="${i}" aria-pressed="${i===li}">${x.name}</button>`).join('')}</div></div>
   ${CATS.map(c=>`<div class="fit-row"><span>${CAT_LABEL[c]}</span><div class="swatches" data-scroll="sw-${c}">${SKINS[c].map(it=>{ const own=PROF.owned[c].includes(it.id);
-    return `<button class="sw" data-act="fitPick" data-cat="${c}" data-id="${it.id}" aria-pressed="${L[c]===it.id}" aria-label="${it.name}${own?'':', '+it.price+' jogos'}"><span class="sw-img">${thumb(c,it.id,L)}</span><span>${it.name}</span>${own?'':`<span class="lock">${coinSVG(12)}${it.price}</span>`}</button>`; }).join('')}</div></div>`).join('')}
+    return `<button class="sw" data-act="fitPick" data-cat="${c}" data-id="${it.id}" aria-pressed="${L[c]===it.id}" aria-label="${it.name}${own?'':(priceOf(it)===0?', grátis':', '+it.price+' jogos')}"><span class="sw-img">${thumb(c,it.id,L)}</span><span>${it.name}</span>${own||!it.price?'':`<span class="lock">${PROMO?`<s class="was">${it.price}</s>Grátis`:`${coinSVG(12)}${it.price}`}</span>`}</button>`; }).join('')}</div></div>`).join('')}
   <div class="sticky-cta">${cta}</div>
 </div>`;
 }
 function buyItems(items){
-  const cost=items.reduce((a,it)=>a+it.price,0); if(coins()<cost) return false;
+  const cost=items.reduce((a,it)=>a+priceOf(it),0); if(coins()<cost) return false;
   items.forEach(it=>{ const c=CATS.find(k=>SKINS[k].includes(it)); if(!PROF.owned[c].includes(it.id)) PROF.owned[c].push(it.id); });
   saveProf(); return true;
 }
@@ -1210,6 +1228,7 @@ function vHome(){
     <button class="btn ghost" data-act="openJoin">Entrar numa sala</button>
     <button class="btn ghost" data-act="openShop">Loja e provador</button>
     <button class="btn ghost" data-act="toggleRules" aria-expanded="${UI.rules}">Como se joga</button>
+    ${coffeeBtn('ghost')}
   </div>
   <ol class="rules" ${UI.rules?'':'hidden'}>
     <li>Formem 2 ou mais equipas, com pelo menos 2 pessoas cada.</li>
@@ -1447,6 +1466,7 @@ function vFinal(){
     <button class="btn ok" data-act="again">Jogar outra vez com as mesmas equipas</button>
     <button class="btn ghost" data-act="openShop">Ir à loja</button>
     <button class="btn ghost" data-act="freshGame">Novo jogo</button>
+    ${coffeeBtn('ghost')}
   </div>
 </div>`;
 }
@@ -1852,15 +1872,15 @@ const ACT={
   tab(b){ UI.shopTab=b.dataset.cat; UI.confirmBuy=null; render(); },
   equip(b){ PROF.eq[b.dataset.cat]=b.dataset.id; PROF.eqAt=Date.now(); saveProf(); applyLook(); render(); toast('Em uso'); },
   buy(b){ const cat=b.dataset.cat, it=SKINS[cat].find(x=>x.id===b.dataset.id), key=cat+':'+it.id;
-    if(UI.confirmBuy!==key){ UI.confirmBuy=key; render(); return; }
-    UI.confirmBuy=null; if(!buyItems([it])) return; PROF.eq[cat]=it.id; PROF.eqAt=Date.now(); saveProf(); applyLook(); UI.fx='bought'; render(); toast(`${it.name}: comprado e em uso`); beep(990,.12); vib(40); },
+    if(priceOf(it)>0&&UI.confirmBuy!==key){ UI.confirmBuy=key; render(); return; }
+    UI.confirmBuy=null; if(!buyItems([it])) return; PROF.eq[cat]=it.id; PROF.eqAt=Date.now(); saveProf(); applyLook(); UI.fx='bought'; render(); toast(priceOf(it)?`${it.name}: comprado e em uso`:`${it.name}: em uso`); beep(990,.12); vib(40); },
   openFitting(b){ UI.preview=Object.assign({},PROF.eq); if(b&&b.dataset.cat) UI.preview[b.dataset.cat]=b.dataset.id; UI.confirmBuy=null; UI.screen='fitting'; render(); window.scrollTo(0,0); },
   fitBack(){ UI.screen='shop'; UI.confirmBuy=null; render(); window.scrollTo(0,0); },
   fitPick(b){ UI.preview[b.dataset.cat]=b.dataset.id; UI.confirmBuy=null; render(); },
   fitLook(b){ UI.preview=Object.assign({},LOOKS[+b.dataset.i].l); UI.confirmBuy=null; render(); },
   fitEquip(){ PROF.eq=Object.assign({},UI.preview); PROF.eqAt=Date.now(); saveProf(); applyLook(); render(); toast('Visual aplicado'); },
-  fitBuy(){ const items=lookMissing(UI.preview); if(UI.confirmBuy!=='look'){ UI.confirmBuy='look'; render(); return; }
-    UI.confirmBuy=null; if(!buyItems(items)) return; PROF.eq=Object.assign({},UI.preview); PROF.eqAt=Date.now(); saveProf(); applyLook(); UI.fx='bought'; render(); toast('Comprado e aplicado'); beep(990,.12); vib(40); },
+  fitBuy(){ const items=lookMissing(UI.preview); if(items.reduce((a,it)=>a+priceOf(it),0)>0&&UI.confirmBuy!=='look'){ UI.confirmBuy='look'; render(); return; }
+    UI.confirmBuy=null; if(!buyItems(items)) return; PROF.eq=Object.assign({},UI.preview); PROF.eqAt=Date.now(); saveProf(); applyLook(); UI.fx='bought'; render(); toast('Visual aplicado'); beep(990,.12); vib(40); },
   testCoins(){ if(!ADMIN.pinHash&&!ADMIN.credId){ grantTest(); return; }
     UI.pinFor='coins'; UI.overlay='pin'; UI.pinEntry=''; UI.pinMsg='PIN de admin para adicionar jogos de teste.'; UI.sheetIn=true; renderOverlay(); if(ADMIN.credId) tryBio(); },
   closeAdmin(){ closeAdmin(); },
